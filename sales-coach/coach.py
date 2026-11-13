@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Listens to your sales call and tells you what to say next. Standard library only.
+
+It reads the call's live captions as text (Google Meet's own captions, which Claude in
+Chrome reads off the page, or any captions or transcript file), one line per turn:
+
+    You: So that's the site, with online booking built in.
+    Daniela: It looks great, but honestly, it's too expensive for us right now.
+
+and for every line from the other side it shows you, and only you:
+  - an objection (price, timing, think-it-over, someone else decides, already has someone,
+    does it work, send me info) and the answer to say next, filled from your offer
+  - a buying signal ("how soon could we start?") and that it is time to ask for the close
+  - a question they asked, so you answer it before you move on
+
+  listen   reads a captions file once, or keeps reading it with --follow during the call
+  card     the answer for one objection, filled from your offer
+  review   after the call: talk time, questions you asked, objections and the next step
+
+    python3 coach.py listen --captions closer/calls/live.txt --me Você --follow
+    python3 coach.py card --objection price
+    python3 coach.py review --captions closer/calls/2026-10-29-sorriso-leve.txt --me Você
+
+Your offer comes from "me" in closer/pipeline.json: offer, price, plan_b, value_line, proof.
+Every answer it suggests must be true for you: it fills in your words, it never invents a number.
+It keeps no audio. It never speaks on the call: you decide what to say.
+"""
+
+import argparse
+import importlib.util
+import json
+import os
+import re
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OBJECTIONS = os.path.join(HERE, "objections.json")
+
+LINE_RE = re.compile(r"^\s*(?:\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*)?([^:]{1,40}):\s*(.+?)\s*$")
+BUYING = re.compile(r"how soon|when (can|could) (we|you) start|what('s| is) (the )?next step|send (me )?(the|a) "
+                    r"(contract|agreement|invoice)|how do (we|i) (get started|sign up|start)|sounds good|let'?s do it"
+                    r"|i'?m in\b|where do i sign|can we start"
+                    r"|quando (a gente |nos |voces )?(pode|podemos|consegue|conseguimos) comecar|qual (e )?o proximo passo"
+                    r"|(manda|me manda|envia|pode mandar|pode enviar) (o|a) (contrato|proposta|boleto|pix|link)"
+                    r"|como (a gente |eu )?(faz|faco|fazemos) pra (comecar|fechar|contratar)|vamos fechar|fechado\b"
+                    r"|bora\b|onde (eu )?assino|da pra comecar|podemos comecar|como funciona o pagamento", re.I)
+QUESTION = re.compile(r"\?\s*$|^(how|what|when|where|why|who|can|could|do|does|is|are|will|would"
+                      r"|como|quanto|quantos|quando|onde|por que|porque|quem|qual|pode|posso|tem|voces)\b", re.I)
+ME_WORDS = ("you", "voce", "eu", "vendedor")
+
+
+def _pipeline():
+    path = os.path.join(HERE, "..", "pipeline", "deals.py")
+    if not os.path.exists(path):
+        return None
+    spec = importlib.util.spec_from_file_location("closer_deals", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+P = _pipeline()
+
+
+def load_objections():
+    with open(OBJECTIONS, encoding="utf-8") as fh:
+        lib = json.load(fh)
+    for o in lib.values():
+        o["re"] = re.compile("|".join(r"\b%s\b" % h for h in o["hear"]), re.I)  # matched on accent-free text
+    return lib
+
+
+def offer_from(pipeline_file):
+    if P is None or not os.path.exists(pipeline_file):
+        return {}
+    return P.load(pipeline_file).get("me", {})
+
+
+def fill(text, offer):
+    def rep(m):
+        v = offer.get(m.group(1))
+        return v if v else "[seu %s]" % m.group(1).replace("_", " ")
+    return re.sub(r"\{(\w+)\}", rep, text)
+
+
+def detect(text, lib):
+    """The objection key heard in one line, or None. The first match in the library order wins."""
+    for key, o in lib.items():
+        if o["re"].search(plain(text)):
+            return key
+    return None
+
+
+def plain(text):
+    return P.plain(text) if P else (text or "").lower()
+
+
+def is_me(who, me):
+    return bool(who) and plain(who) in (plain(me),) + ME_WORDS
+
+
+def parse_line(line):
+    m = LINE_RE.match(line)
+    if not m:
+        return None, line.strip()
+    return m.group(1).strip(), m.group(2).strip()
+
+
+def coach_line(who, text, me, lib, offer):
+    """What to show you for one caption line. None when it is your own line or nothing to say."""
+    if not text or is_me(who, me):
+        return None
+    key = detect(text, lib)
+    if key:
+        o = lib[key]
+        return {"kind": "objection", "who": who, "heard": text, "key": key, "label": o["label"],
+                "say": fill(o["say"], offer), "why": o["why"]}
+    if BUYING.search(plain(text)):
+        return {"kind": "buying", "who": who, "heard": text, "label": "Sinal de compra",
+                "say": "Ótimo. O próximo passo é %s. Posso te mandar hoje?" % (
+                    offer.get("next_step") or "um contrato curto"),
+                "why": "A pessoa está perguntando como comprar. Pare de vender e combine o próximo passo."}
+    if QUESTION.search(plain(text)):
+        return {"kind": "question", "who": who, "heard": text, "label": "Fizeram uma pergunta",
+                "say": "Responda direto antes de seguir.", "why": text}
+    return None
+
+
+def show(card):
+    bar = "-" * 60
+    return "%s\n%s  (%s: \"%s\")\nFale agora: %s\n  %s\n%s" % (
+        bar, card["label"], card["who"] or "cliente", card["heard"][:90], card["say"], card["why"], bar)
+
+
+def listen(lines, me, lib, offer):
+    cards = []
+    for line in lines:
+        who, text = parse_line(line)
+        card = coach_line(who, text, me, lib, offer)
+        if card:
+            cards.append(card)
+    return cards
+
+
+def follow(path, me, lib, offer, poll=1.0):
+    print("Ouvindo %s. Ctrl-C pra parar." % path)
+    pos = 0
+    try:
+        while True:
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as fh:
+                    fh.seek(pos)
+                    chunk = fh.read()
+                    pos = fh.tell()
+                for card in listen(chunk.splitlines(), me, lib, offer):
+                    print(show(card), flush=True)
+            time.sleep(poll)
+    except KeyboardInterrupt:
+        print("\nParei de ouvir.")
+
+
+def review(lines, me, lib):
+    mine = theirs = 0
+    my_questions, objections, signals = [], [], []
+    for line in lines:
+        who, text = parse_line(line)
+        if not text:
+            continue
+        words = len(text.split())
+        if is_me(who, me):
+            mine += words
+            if text.rstrip().endswith("?"):
+                my_questions.append(text)
+        else:
+            theirs += words
+            k = detect(text, lib)
+            if k:
+                objections.append((k, text))
+            elif BUYING.search(plain(text)):
+                signals.append(text)
+    total = mine + theirs or 1
+    last_mine = [parse_line(l)[1] for l in lines if is_me(parse_line(l)[0], me)]
+    next_step = bool(last_mine) and bool(re.search(r"\b(monday|tuesday|wednesday|thursday|friday|tomorrow|next week"
+                                                     r"|send|invite|calendar|agreement|contract|proposal"
+                                                     r"|segunda|terca|quarta|quinta|sexta|amanha|semana que vem"
+                                                     r"|mando|envio|mandar|enviar|convite|agenda|contrato|proposta)\b",
+                                                     plain(" ".join(last_mine[-3:])), re.I))
+    return {"talk_share": round(100.0 * mine / total), "questions_asked": len(my_questions),
+            "objections": objections, "buying_signals": signals, "next_step_agreed": next_step}
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description="Tells you what to say next on a sales call.")
+    p.add_argument("--file", default=os.path.join("closer", "pipeline.json"), help="for your offer (me)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("listen")
+    s.add_argument("--captions", required=True)
+    s.add_argument("--me", default="Você", help="your name as it shows in the captions")
+    s.add_argument("--follow", action="store_true")
+    s = sub.add_parser("card")
+    s.add_argument("--objection", required=True)
+    s = sub.add_parser("review")
+    s.add_argument("--captions", required=True)
+    s.add_argument("--me", default="Você")
+    a = p.parse_args(argv)
+    lib = load_objections()
+    offer = offer_from(a.file)
+    if a.cmd == "card":
+        if a.objection not in lib:
+            print("No objection %s. Try: %s" % (a.objection, ", ".join(lib)), file=sys.stderr)
+            return 1
+        o = lib[a.objection]
+        print("%s\nFale agora: %s\n  %s" % (o["label"], fill(o["say"], offer), o["why"]))
+        return 0
+    if a.cmd == "listen" and a.follow:
+        follow(a.captions, a.me, lib, offer)
+        return 0
+    with open(a.captions, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    if a.cmd == "listen":
+        cards = listen(lines, a.me, lib, offer)
+        for c in cards:
+            print(show(c))
+        if not cards:
+            print("Nada pra sugerir ainda.")
+    else:
+        r = review(lines, a.me, lib)
+        print("Você falou %d%% do tempo%s." % (r["talk_share"], " (o ideal é menos de 50%)" if r["talk_share"] > 50 else ""))
+        print("Você fez %d perguntas." % r["questions_asked"])
+        for k, t in r["objections"]:
+            print("Objeção (%s): %s" % (k, t))
+        for t in r["buying_signals"]:
+            print("Sinal de compra: %s" % t)
+        print("Próximo passo combinado: %s" % ("sim" if r["next_step_agreed"] else "NÃO. Mande um resumo com um próximo passo claro."))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
