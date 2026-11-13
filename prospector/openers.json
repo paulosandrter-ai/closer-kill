@@ -1,0 +1,38 @@
+{
+  "no-booking": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nVi que a {short} ainda não tem agendamento online. Muita gente marca fora do horário comercial, e esse cliente acaba indo pro concorrente da outra rua.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "not-mobile": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nAbri o site da {short} no celular e ele fica difícil de usar por lá. E hoje quase toda busca por negócio local é feita no celular.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "slow": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nO site da {short} demorou pra carregar aqui, e a maioria das pessoas desiste de uma página lenta antes dela abrir.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "no-ads": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nPelo que vi, a {short} não está anunciando no Google nem no Instagram. Então quem procura pelo seu serviço agora está vendo outra empresa primeiro.\n\nA gente faz {offer} pra negócios locais. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "no-ordering": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nNão achei um jeito de pedir online na {short}, e muita gente hoje só pede assim.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "no-whatsapp": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nEntrei no site da {short} e não achei um botão pra chamar no WhatsApp. É por lá que a maioria dos clientes prefere falar, e quem não acha o botão costuma desistir.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "no-reviews": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nO site da {short} não mostra nenhuma avaliação de cliente, e normalmente é a primeira coisa que um cliente novo procura.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "no-site": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nProcurei o site da {short} e não consegui abrir. Quem pesquisa por vocês pode estar dando de cara com a porta fechada.\n\nA gente faz {offer} pra negócios locais em 2 semanas. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  },
+  "generic": {
+    "subject": "Ideia rápida pra {company}",
+    "body": "Oi {first}, tudo bem?\n\nTive uma ideia rápida pra {short} que acho que traria mais clientes.\n\nA gente faz {offer} pra negócios locais. Vale uma call de 15 minutos?\n\nAbraço,\n{me}"
+  }
+}
