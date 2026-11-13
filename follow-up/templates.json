@@ -1,0 +1,22 @@
+{
+  "followup-1": {
+    "use": "2 dias depois da primeira mensagem: um lembrete curto, sem nada novo",
+    "subject": "Re: ideia rápida pra {company}",
+    "body": "Oi {first}, só subindo essa mensagem caso tenha se perdido.\n\n{me}"
+  },
+  "followup-2": {
+    "use": "2 dias depois do follow-up 1: entregue algo (uma prévia, um número, um resultado)",
+    "subject": "Re: ideia rápida pra {company}",
+    "body": "Oi {first}, {hook}\n\n{me}"
+  },
+  "followup-3": {
+    "use": "4 dias depois do follow-up 2: o último, e ele avisa que é o último",
+    "subject": "Re: ideia rápida pra {company}",
+    "body": "Oi {first}, posso encerrar por aqui, ou {hook} fica bom pra uma call rápida? Qualquer resposta tá ótima, e essa é minha última mensagem.\n\n{me}"
+  },
+  "confirm-time": {
+    "use": "a pessoa respondeu com um horário: confirme e avise que o convite está indo",
+    "subject": "Re: ideia rápida pra {company}",
+    "body": "{hook} fechado, {first}. Já te mando o convite. Até lá!\n\n{me}"
+  }
+}
