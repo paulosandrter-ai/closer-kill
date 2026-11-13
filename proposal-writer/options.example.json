@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Projeto completo",
+    "setup": 2500,
+    "monthly": 0,
+    "includes": ["Site com agendamento online", "No ar em 14 dias", "Google Ads configurado"]
+  },
+  {
+    "name": "Plano mensal",
+    "setup": 0,
+    "monthly": 399,
+    "includes": ["Site com agendamento online", "Gestão de Google Ads", "Sem taxa de implantação", "Cancela quando quiser"],
+    "recommended": true
+  }
+]
