@@ -1,0 +1,23 @@
+{
+  "name": "closer-kill",
+  "description": "11 skills do Claude que tocam todo o seu comercial: prospecção, follow-up no e-mail e WhatsApp, coach de call, proposta e contrato. Em português. Grátis.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Paulo (Vora Marketing & Digital)",
+    "url": "https://github.com/paulosandrter-ai"
+  },
+  "homepage": "https://github.com/paulosandrter-ai/closer-kill",
+  "repository": "https://github.com/paulosandrter-ai/closer-kill",
+  "license": "MIT",
+  "skills": "./",
+  "keywords": [
+    "claude",
+    "claude-skills",
+    "vendas",
+    "crm",
+    "prospeccao",
+    "whatsapp",
+    "sales",
+    "portugues"
+  ]
+}

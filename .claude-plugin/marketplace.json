@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "closer-kill",
+  "description": "Closer Kill: pacote de skills de vendas pro Claude, em português",
+  "owner": {
+    "name": "Paulo (Vora Marketing & Digital)",
+    "url": "https://github.com/paulosandrter-ai"
+  },
+  "plugins": [
+    {
+      "name": "closer-kill",
+      "description": "Onze skills do Claude que tocam seu comercial: registro, prospecção, follow-up até marcar a call, coach de vendas ao vivo, contrato, pesquisa, agenda, funil, proposta, reconquista e previsão. Em português, com reais, WhatsApp e LGPD.",
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/paulosandrter-ai/closer-kill"
+    }
+  ]
+}
